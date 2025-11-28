@@ -109,7 +109,7 @@ fi
 ##Functions
 live_desktop_check(){
 	##Check for live desktop environment
-	if [ "$(dpkg -l ubuntu-desktop)" ];
+	if [ "$(dpkg -l ubuntu-mate-desktop)" ];
 	then
 		echo "Desktop environment test passed."
 		if grep casper /proc/cmdline >/dev/null 2>&1;
