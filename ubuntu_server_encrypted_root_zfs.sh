@@ -42,7 +42,10 @@ ubuntuver="noble" #Ubuntu release to install. "jammy" (22.04). "noble" (24.04). 
 distro_variant="MATE" #Ubuntu variant to install. "server" (Ubuntu server; cli only.) "desktop" (Default Ubuntu desktop install). "kubuntu" (KDE plasma desktop variant). "xubuntu" (Xfce desktop variant). "budgie" (Budgie desktop variant). "MATE" (MATE desktop variant).
 user="comnetadmin" #Username for new install.
 PASSWORD="password" #Password for user in new install.
-hostname="ws01" #Name to identify the main system on the network. An underscore is DNS non-compliant.
+read -p "Enter the hostname [wsXX]: " hostname
+hostname=${hostname:-wsXX}
+echo "We'll configure the hostname to: $hostname"
+#hostname="ws01" #Name to identify the main system on the network. An underscore is DNS non-compliant.
 zfs_root_password="" #Password for encrypted root pool. Minimum 8 characters. "" for no password encrypted protection. Unlocking root pool also unlocks data pool, unless the root pool has no password protection, then a separate data pool password can be set below.
 zfs_root_encrypt="native" #Encryption type. "native" for native zfs encryption. "luks" for luks. Required if there is a root pool password, otherwise ignored.
 locale="en_US.UTF-8" #New install language setting.
@@ -1045,7 +1048,7 @@ zfsbootmenu_install_config_Func(){
 			cd /usr/local/src/zfsbootmenu
 
 			##Download zfsbootmenu
-			zbm_release="git" ##"git" for git master. "release" for latest release.
+			zbm_release="release" ##"git" for git master. "release" for latest release.
 
 			case "\${zbm_release}" in
 			git)
@@ -2096,7 +2099,20 @@ extra_programs(){
 	case "$extra_programs" in
 	yes)	
 		##additional programs
+		apt install -y vim screen etckeeper qemu-guest-agent landscape-client 
 		
+		#Configure Landscape
+		LANDSCAPE_ACCOUNT_NAME='standalone'
+		LANDSCAPE_FQDN='landscape.comnet-labs.org'
+		LANDSCAPE_COMPUTER_TITLE=$(hostname -f)
+
+		#landscape-config --silent --account-name="${LANDSCAPE_ACCOUNT_NAME}" --computer-title="${LANDSCAPE_COMPUTER_TITLE}" --tags="" --script-users='nobody,landscape,root' --ping-url="http://${LANDSCAPE_FQDN}/ping" --url="https://${LANDSCAPE_FQDN}/message-system"
+
+		#univention domain join assistant, join process later manually via gui
+		add-apt-repository -y ppa:univention-dev/ppa
+		apt-get update
+		DEBIAN_FRONTEND=noninteractive apt-get -y install univention-domain-join
+
 		##install samba mount access
 		apt install -yq cifs-utils
 		
