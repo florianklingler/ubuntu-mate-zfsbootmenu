@@ -42,9 +42,6 @@ ubuntuver="noble" #Ubuntu release to install. "jammy" (22.04). "noble" (24.04). 
 distro_variant="MATE" #Ubuntu variant to install. "server" (Ubuntu server; cli only.) "desktop" (Default Ubuntu desktop install). "kubuntu" (KDE plasma desktop variant). "xubuntu" (Xfce desktop variant). "budgie" (Budgie desktop variant). "MATE" (MATE desktop variant).
 user="comnetadmin" #Username for new install.
 PASSWORD="password" #Password for user in new install.
-read -p "Enter the hostname [wsXX]: " hostname
-hostname=${hostname:-wsXX}
-echo "We'll configure the hostname to: $hostname"
 #hostname="ws01" #Name to identify the main system on the network. An underscore is DNS non-compliant.
 zfs_root_password="" #Password for encrypted root pool. Minimum 8 characters. "" for no password encrypted protection. Unlocking root pool also unlocks data pool, unless the root pool has no password protection, then a separate data pool password can be set below.
 zfs_root_encrypt="native" #Encryption type. "native" for native zfs encryption. "luks" for luks. Required if there is a root pool password, otherwise ignored.
@@ -89,6 +86,16 @@ if [ "$(id -u)" -ne 0 ]; then
    echo "Please run as root."
    exit 1
 fi
+
+read -p "Enter the hostname [wsXX]: " hostname
+hostname=${hostname:-wsXX}
+echo "We'll configure the hostname to: $hostname"
+
+echo "Available Network Interfaces:"
+ls /sys/class/net
+read -p "Enter the internet interface [ens18]: " inet_interf
+inet_interf=${inet_interf:-ens18}
+echo "We'll use interface: $inet_interf"
 
 ##Check for EFI boot environment
 if [ -d /sys/firmware/efi ]; then
@@ -972,6 +979,8 @@ debootstrap_createzfspools_Func(){
 		zfs create	"$RPOOL"/var/snap					##snaps handle revisions themselves
 		zfs create	"$RPOOL"/var/spool					##printing tasks
 		zfs create	"$RPOOL"/var/www					##server webserver content
+		zfs create	"$RPOOL"/var/lib/libvirt				##libvirt vm images, data
+		zfs create	"$RPOOL"/opt						##opt
 		
 		
 		##USERDATA datasets
@@ -2099,8 +2108,18 @@ extra_programs(){
 	case "$extra_programs" in
 	yes)	
 		##additional programs
-		apt install -y vim screen etckeeper qemu-guest-agent landscape-client 
-		
+		apt install -y vim screen etckeeper qemu-guest-agent landscape-client virt-manager bridge-utils
+	
+		mkdir -p /etc/qemu
+		chmod 755 /etc/qemu
+
+		cat <<EOF > "/etc/qemu/bridge.conf"
+allow vmbr-def
+allow vmbr-lab
+allow vmbr-iot
+		EOF
+		chmod 755 /etc/qemu/bridge.conf
+
 		#Configure Landscape
 		LANDSCAPE_ACCOUNT_NAME='standalone'
 		LANDSCAPE_FQDN='landscape.comnet-labs.org'
@@ -2113,6 +2132,59 @@ extra_programs(){
 		apt-get update
 		DEBIAN_FRONTEND=noninteractive apt-get -y install univention-domain-join
 
+		#polkit disable shutdown, hibernate, etc.
+		cat <<EOF > "/etc/polkit-1/rules.d/disable-shutdown.rules"
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.login1.power-off" ||
+        action.id == "org.freedesktop.login1.power-off-ignore-inhibit" ||
+        action.id == "org.freedesktop.login1.power-off-multiple-sessions" ||
+        action.id == "org.freedesktop.login1.halt" ||
+        action.id == "org.freedesktop.login1.halt-ignore-inhibit" ||
+        action.id == "org.freedesktop.login1.halt-multiple-sessions" ||
+        action.id == "org.freedesktop.login1.reboot" ||
+        action.id == "org.freedesktop.login1.reboot-multiple-sessions" ||
+        action.id == "org.freedesktop.login1.reboot-ignore-inhibit" ||
+        action.id == "org.freedesktop.login1.set-reboot-parameter" ||
+        action.id == "org.freedesktop.login1.set-reboot-to-firmware-setup" ||
+        action.id == "org.freedesktop.login1.set-reboot-to-boot-loader-menu" ||
+        action.id == "org.freedesktop.login1.set-reboot-to-boot-loader-entry" ||
+        action.id == "org.freedesktop.login1.suspend" ||
+        action.id == "org.freedesktop.login1.suspend-ignore-inhibit" ||
+        action.id == "org.freedesktop.login1.suspend-multiple-sessions")
+    {
+        return polkit.Result.NO;
+    }
+});
+		EOF
+
+		#/etc/network/interfaces
+		cat <<EOF >> "/etc/network/interfaces"
+auto $inet_interf
+iface $inet_interf inet dhcp
+
+auto vmbr-def
+iface vmbr-def inet static
+	address 192.168.185.9
+	netmask 255.255.255.0
+	bridge-stp off
+	bridge-fd 0
+	bridge-ports
+
+auto vmbr-lab
+	address 192.168.186.9
+	netmask 255.255.255.0
+	bridge-stp off
+	bridge-fd 0
+	bridge-ports
+
+auto vmbr-iot
+	address 192.168.188.9
+	netmask 255.255.255.0
+	bridge-stp off
+	bridge-fd 0
+	bridge-ports
+
+	EOF
 		##install samba mount access
 		apt install -yq cifs-utils
 		
@@ -2495,9 +2567,14 @@ case "${1-default}" in
 		reinstall-zbm
 	;;
 	reinstall-pyznap)
-		echo "Re-installing pyznap. Press Enter to Continue ot CTRL+C to abort."
+		echo "Re-installing pyznap. Press Enter to Continue or CTRL+C to abort."
 		read -r
 		reinstall-pyznap
+	;;
+	extra-programs)
+		echo "Installing Extra-Programs. Press Enter to Continue or CTRL+C to abort."
+		read -r
+		extra_programs
 	;;
 	*)
 		printf "%s\n%s\n%s\n" "-----" "Usage: $0 initial | postreboot | remoteaccess | datapool | reinstall-zbm | reinstall-pyznap" "-----"
