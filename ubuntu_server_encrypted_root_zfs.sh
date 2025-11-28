@@ -2108,7 +2108,7 @@ extra_programs(){
 	case "$extra_programs" in
 	yes)	
 		##additional programs
-		apt install -y vim screen etckeeper qemu-guest-agent landscape-client virt-manager bridge-utils
+		apt install -y vim screen etckeeper qemu-guest-agent landscape-client virt-manager bridge-utils bash-completion
 	
 		mkdir -p /etc/qemu
 		chmod 755 /etc/qemu
@@ -2172,23 +2172,36 @@ iface vmbr-def inet static
 	netmask 255.255.255.0
 	bridge-stp off
 	bridge-fd 0
-	bridge-ports
+	bridge-ports none
 
 auto vmbr-lab
+iface vmbr-lab inet static
 	address 192.168.186.9
-	netmask 255.255.255.0
+	netmask 255.255.254.0
 	bridge-stp off
 	bridge-fd 0
-	bridge-ports
+	bridge-ports none
 
 auto vmbr-iot
+iface vmbr-iot inet static
 	address 192.168.188.9
+	netmask 255.255.254.0
+	bridge-stp off
+	bridge-fd 0
+	bridge-ports none
+
+auto vmbr-san
+iface vmbr-san inet static
+	address 192.168.190.9
 	netmask 255.255.255.0
 	bridge-stp off
 	bridge-fd 0
-	bridge-ports
+	bridge-ports none
 
 EOF
+
+		#disable network manager
+		systemctl disable NetworkManager
 		##install samba mount access
 		apt install -yq cifs-utils
 		
