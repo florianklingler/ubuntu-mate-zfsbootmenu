@@ -2207,6 +2207,7 @@ EOF
 		
 		##install openssh-server
 		apt install -y openssh-server
+		systemctl enable ssh.service
 
 		apt install --yes man-db tldr locate
 			
