@@ -2581,7 +2581,7 @@ case "${1-default}" in
 		extra_programs
 	;;
 	*)
-		printf "%s\n%s\n%s\n" "-----" "Usage: $0 initial | postreboot | remoteaccess | datapool | reinstall-zbm | reinstall-pyznap" "-----"
+		printf "%s\n%s\n%s\n" "-----" "Usage: $0 initial | postreboot | remoteaccess | datapool | reinstall-zbm | reinstall-pyznap | extra-programs" "-----"
 	;;
 esac
 
