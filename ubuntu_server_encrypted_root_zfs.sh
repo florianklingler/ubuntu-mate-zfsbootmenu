@@ -72,7 +72,7 @@ quiet_boot="yes" #Set to "no" to show boot sequence.
 ethprefix="e" #First letter of ethernet interface. Used to identify ethernet interface to setup networking in new install.
 install_log="ubuntu_setup_zfs_root.log" #Installation log filename.
 log_loc="/var/log" #Installation log location.
-ipv6_apt_fix_live_iso="no" #Try setting to "yes" gif apt-get is slow in the ubuntu live iso. Doesn't affect ipv6 functionality in the new install.
+ipv6_apt_fix_live_iso="yes" #Try setting to "yes" gif apt-get is slow in the ubuntu live iso. Doesn't affect ipv6 functionality in the new install.
 remoteaccess_hostname="zbm" #Name to identify the zfsbootmenu system on the network.
 remoteaccess_ip_config="dhcp" #"dhcp", "dhcp,dhcp6", "dhcp6", or "static". Automatic (dhcp) or static IP assignment for zfsbootmenu remote access.
 remoteaccess_ip="192.168.0.222" #Remote access static IP address to connect to ZFSBootMenu. Not used for automatic IP configuration.
@@ -2200,6 +2200,43 @@ iface vmbr-san inet static
 
 EOF
 
+#disable ipv6
+cat > /etc/sysctl.d/99-ipv6-disable.conf <<-EOF
+			net.ipv6.conf.all.disable_ipv6 = 1
+			#net.ipv6.conf.default.disable_ipv6 = 1
+			#net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+
+#disable guest login
+cat > /etc/lightdm/lightdm.conf.d/91-arctica-greeter-guest-session.conf <<-EOF
+[LightDM]
+
+# Override default guest-account script by Arctica Greeters guest
+# account script.
+guest-account-script=arctica-greeter-guest-account-script
+
+[Seat:*]
+
+# disable guest sessions (a guest session requires a valid default
+# user-session parameter, see below)
+allow-guest=false
+greeter-allow-guest=false
+
+# if on Ubuntu and Unity is not installed, this is a minimal user session type for
+# default (guest) sessions (sudo apt-get install openbox)
+#user-session=openbox
+EOF
+
+#install xrdp (with h264 acceleration)
+apt-add-repository -y ppa:saxl/xrdp-egfx
+apt install -y xrdp-egfx xorgxrdp-egfx
+
+#install ufw and configure it
+apt install -y ufw
+ufw allow ssh
+ufw allow 3389
+ufw enable
+
 		#disable network manager
 		systemctl disable NetworkManager
 		##install samba mount access
@@ -2208,6 +2245,7 @@ EOF
 		##install openssh-server
 		apt install -y openssh-server
 		systemctl enable ssh.service
+		systemctl start ssh.service
 
 		apt install --yes man-db tldr locate
 			
