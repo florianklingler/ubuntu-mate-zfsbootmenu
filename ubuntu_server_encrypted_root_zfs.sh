@@ -2113,11 +2113,11 @@ extra_programs(){
 		mkdir -p /etc/qemu
 		chmod 755 /etc/qemu
 
-		cat <<EOF > "/etc/qemu/bridge.conf"
+cat <<EOF > "/etc/qemu/bridge.conf"
 allow vmbr-def
 allow vmbr-lab
 allow vmbr-iot
-		EOF
+EOF
 		chmod 755 /etc/qemu/bridge.conf
 
 		#Configure Landscape
@@ -2133,7 +2133,7 @@ allow vmbr-iot
 		DEBIAN_FRONTEND=noninteractive apt-get -y install univention-domain-join
 
 		#polkit disable shutdown, hibernate, etc.
-		cat <<EOF > "/etc/polkit-1/rules.d/disable-shutdown.rules"
+cat <<EOF > "/etc/polkit-1/rules.d/disable-shutdown.rules"
 polkit.addRule(function(action, subject) {
     if (action.id == "org.freedesktop.login1.power-off" ||
         action.id == "org.freedesktop.login1.power-off-ignore-inhibit" ||
@@ -2155,10 +2155,14 @@ polkit.addRule(function(action, subject) {
         return polkit.Result.NO;
     }
 });
-		EOF
+EOF
 
 		#/etc/network/interfaces
-		cat <<EOF >> "/etc/network/interfaces"
+cat <<EOF > "/etc/network/interfaces"
+# interfaces(5) file used by ifup(8) and ifdown(8)
+# Include files from /etc/network/interfaces.d:
+source /etc/network/interfaces.d/*
+
 auto $inet_interf
 iface $inet_interf inet dhcp
 
@@ -2184,7 +2188,7 @@ auto vmbr-iot
 	bridge-fd 0
 	bridge-ports
 
-	EOF
+EOF
 		##install samba mount access
 		apt install -yq cifs-utils
 		
