@@ -2119,15 +2119,17 @@ cat <<EOF > "/etc/qemu/bridge.conf"
 allow vmbr-def
 allow vmbr-lab
 allow vmbr-iot
+allow vmbr-san
 EOF
 		chmod 755 /etc/qemu/bridge.conf
 
 		#Configure Landscape
 		LANDSCAPE_ACCOUNT_NAME='standalone'
 		LANDSCAPE_FQDN='landscape.comnet-labs.org'
+		LANDSCAPE_VM_FQDN='landscape-vm.comnet-labs.org'
 		LANDSCAPE_COMPUTER_TITLE=$(hostname -f)
 
-		landscape-config --silent --account-name="${LANDSCAPE_ACCOUNT_NAME}" --computer-title="${LANDSCAPE_COMPUTER_TITLE}" --tags="" --script-users='nobody,landscape,root' --ping-url="https://${LANDSCAPE_FQDN}/ping" --url="https://${LANDSCAPE_FQDN}/message-system"
+		landscape-config --silent --account-name="${LANDSCAPE_ACCOUNT_NAME}" --computer-title="${LANDSCAPE_COMPUTER_TITLE}" --tags="" --script-users='nobody,landscape,root' --ping-url="https://${LANDSCAPE_VM_FQDN}/ping" --url="https://${LANDSCAPE_FQDN}/message-system"
 
 		#univention domain join assistant, join process later manually via gui
 		add-apt-repository -y ppa:univention-dev/ppa
@@ -2250,6 +2252,11 @@ ufw enable
 		systemctl start ssh.service
 
 		apt install --yes man-db tldr locate
+
+		echo "We need to update user and root passwords, please enter them now when prompted"
+		passwd root
+		passwd "$user"
+		echo "The system should be rebooted now"
 			
 	;;
 	no)
