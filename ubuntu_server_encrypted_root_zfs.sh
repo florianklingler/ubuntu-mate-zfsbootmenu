@@ -2136,6 +2136,10 @@ EOF
 		apt-get update
 		DEBIAN_FRONTEND=noninteractive apt-get -y install univention-domain-join
 
+		# add computer to univention domain
+		echo "Adding Computer to Univention Domain"
+		univention-domain-join-cli --username Administrator --domain comnet-labs.org
+
 		#polkit disable shutdown, hibernate, etc.
 cat <<EOF > "/etc/polkit-1/rules.d/disable-shutdown.rules"
 polkit.addRule(function(action, subject) {
