@@ -980,11 +980,13 @@ debootstrap_createzfspools_Func(){
 		zfs create	"$RPOOL"/var/spool					##printing tasks
 		zfs create	"$RPOOL"/var/www					##server webserver content
 		zfs create	"$RPOOL"/var/lib/libvirt				##libvirt vm images, data
+		zfs set quota=1024G	"$RPOOL"/var/lib/libvirt				##libvirt vm images, data
 		zfs create	"$RPOOL"/opt						##opt
 		
 		
 		##USERDATA datasets
 		zfs create "$RPOOL"/home
+		zfs set quota=768G "$RPOOL"/home
 		zfs create -o mountpoint=/root "$RPOOL"/home/root
 		chmod 700 "$mountpoint"/root
 
