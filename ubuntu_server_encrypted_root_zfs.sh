@@ -2129,7 +2129,7 @@ EOF
 		LANDSCAPE_VM_FQDN='landscape-vm.comnet-labs.org'
 		LANDSCAPE_COMPUTER_TITLE=$(hostname -f)
 
-		landscape-config --silent --account-name="${LANDSCAPE_ACCOUNT_NAME}" --computer-title="${LANDSCAPE_COMPUTER_TITLE}" --tags="" --script-users='nobody,landscape,root' --ping-url="https://${LANDSCAPE_VM_FQDN}/ping" --url="https://${LANDSCAPE_FQDN}/message-system"
+		landscape-config --silent --account-name="${LANDSCAPE_ACCOUNT_NAME}" --computer-title="${LANDSCAPE_COMPUTER_TITLE}" --tags="" --script-users='nobody,landscape,root' --ping-url="http://${LANDSCAPE_VM_FQDN}/ping" --url="https://${LANDSCAPE_FQDN}/message-system"
 
 		#univention domain join assistant, join process later manually via gui
 		add-apt-repository -y ppa:univention-dev/ppa
