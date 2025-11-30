@@ -43,6 +43,7 @@ distro_variant="MATE" #Ubuntu variant to install. "server" (Ubuntu server; cli o
 user="comnetadmin" #Username for new install.
 PASSWORD="password" #Password for user in new install.
 #hostname="ws01" #Name to identify the main system on the network. An underscore is DNS non-compliant.
+domainname="comnet-labs.org"
 zfs_root_password="" #Password for encrypted root pool. Minimum 8 characters. "" for no password encrypted protection. Unlocking root pool also unlocks data pool, unless the root pool has no password protection, then a separate data pool password can be set below.
 zfs_root_encrypt="native" #Encryption type. "native" for native zfs encryption. "luks" for luks. Required if there is a root pool password, otherwise ignored.
 locale="en_US.UTF-8" #New install language setting.
@@ -96,6 +97,20 @@ ls /sys/class/net
 read -p "Enter the internet interface [ens18]: " inet_interf
 inet_interf=${inet_interf:-ens18}
 echo "We'll use interface: $inet_interf"
+
+#query IP Address, for different networks
+read -p "Enter the last digits to be used as static IP Address (141.13.185.XXX) [51]: " netw_ip_digits
+netw_ip_digits=${netw_ip_digits:-51}
+netw_uniba_ip="141.13.185.$netw_ip_digits"
+netw_def_ip="192.168.185.$netw_ip_digits"
+netw_lab_ip="192.168.186.$netw_ip_digits"
+netw_iot_ip="192.168.188.$netw_ip_digits"
+netw_san_ip="192.168.190.$netw_ip_digits"
+echo "We'll configure the system to (UniBA): $netw_uniba_ip"
+echo "We'll configure the system to (Def): $netw_def_ip"
+echo "We'll configure the system to (Lab): $netw_lab_ip"
+echo "We'll configure the system to (IoT): $netw_iot_ip"
+echo "We'll configure the system to (SAN): $netw_san_ip"
 
 ##Check for EFI boot environment
 if [ -d /sys/firmware/efi ]; then
@@ -1346,7 +1361,7 @@ systemsetupFunc_part1(){
 
 	##Configure hostname
 	echo "$hostname" > "$mountpoint"/etc/hostname
-	echo "127.0.1.1       $hostname" >> "$mountpoint"/etc/hosts
+	echo "127.0.1.1       $hostname.$domainname $hostname" >> "$mountpoint"/etc/hosts
 	
 	##Configure network interface
 	
@@ -2172,11 +2187,16 @@ cat <<EOF > "/etc/network/interfaces"
 source /etc/network/interfaces.d/*
 
 auto $inet_interf
-iface $inet_interf inet dhcp
+iface $inet_interf inet static
+	address $netw_uniba_ip
+	netmask 255.255.255.128
+	gateway 141.13.185.120
+	dns-nameserver 1.1.1.1 1.0.0.1
+	dns-search $domainname
 
 auto vmbr-def
 iface vmbr-def inet static
-	address 192.168.185.9
+	address $netw_def_ip
 	netmask 255.255.255.0
 	bridge-stp off
 	bridge-fd 0
@@ -2184,7 +2204,7 @@ iface vmbr-def inet static
 
 auto vmbr-lab
 iface vmbr-lab inet static
-	address 192.168.186.9
+	address $netw_lab_ip
 	netmask 255.255.254.0
 	bridge-stp off
 	bridge-fd 0
@@ -2192,7 +2212,7 @@ iface vmbr-lab inet static
 
 auto vmbr-iot
 iface vmbr-iot inet static
-	address 192.168.188.9
+	address $netw_iot_ip
 	netmask 255.255.254.0
 	bridge-stp off
 	bridge-fd 0
@@ -2200,7 +2220,7 @@ iface vmbr-iot inet static
 
 auto vmbr-san
 iface vmbr-san inet static
-	address 192.168.190.9
+	address $netw_san_ip
 	netmask 255.255.255.0
 	bridge-stp off
 	bridge-fd 0
