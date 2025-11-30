@@ -2125,7 +2125,7 @@ extra_programs(){
 	case "$extra_programs" in
 	yes)	
 		##additional programs
-		apt install -y vim screen etckeeper qemu-guest-agent landscape-client virt-manager bridge-utils bash-completion
+		apt install -y vim screen etckeeper qemu-guest-agent landscape-client virt-manager bridge-utils bash-completion htop
 	
 		mkdir -p /etc/qemu
 		chmod 755 /etc/qemu
